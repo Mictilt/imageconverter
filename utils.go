@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/davidbyttow/govips/v2/vips"
-	"github.com/google/uuid"
+	"github.com/pdfcpu/pdfcpu/pkg/api"
 )
 
 // A new folder is created at the root of the project.
@@ -21,10 +21,30 @@ func createFolder(dirname string) error {
 	}
 	return nil
 }
+func compressPDF(inputPath, outputPath string) error {
+	// Create a temporary file to store the compressed PDF
+	tempOutputPath := outputPath + ".tmp"
 
+	// Compress the PDF using pdfcpu
+	err := api.OptimizeFile(inputPath, tempOutputPath, nil)
+	if err != nil {
+		return err
+	}
+
+	// Rename the temporary file to the desired output path
+	err = os.Rename(tempOutputPath, outputPath)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
 // The mime type of the image is changed, it is compressed and then saved in the specified folder.
-func imageProcessing(buffer []byte, quality int, dirname string) (string, error) {
-	filename := strings.Replace(uuid.New().String(), "-", "", -1) + ".jpg"
+func imageProcessing(buffer []byte, quality int, dirname string, filepathOriginal string) (string, error) {
+	println(fmt.Sprintf("Compressing image %s", dirname))
+	filename := filepath.Base(filepathOriginal)
+	filename = strings.TrimSuffix(filename, filepath.Ext(filename))
+	filename = filename + ".jpg"
 	println(fmt.Sprintf("Compressing image %s", filename))
 	image, err := vips.NewImageFromBuffer(buffer)
 	if err != nil {
@@ -33,6 +53,8 @@ func imageProcessing(buffer []byte, quality int, dirname string) (string, error)
 	defer image.Close()
 
 	image.AutoRotate()
+
+	
 
 	options := vips.NewJpegExportParams()
 	options.Quality = quality
@@ -73,7 +95,7 @@ func processDirectory(fileType, dirInput string, dirOutput string, quality int) 
 			}
 
 			// Compress the image
-			_, err = imageProcessing(buffer, quality, dirOutput)
+			_, err = imageProcessing(buffer, quality, dirOutput, path)
 			if err != nil {
 				return err
 			}
