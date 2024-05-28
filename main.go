@@ -4,9 +4,12 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"log"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/urfave/cli/v2"
 )
@@ -23,6 +26,7 @@ func main() {
 			fmt.Println("Choose an option:")
 			fmt.Println("1. Read a directory")
 			fmt.Println("2. Read a specific file")
+			fmt.Println("3. Compress a PDF file")
 			reader := bufio.NewReader(os.Stdin)
 			choice, _ := reader.ReadString('\n')
 			choice = strings.TrimSuffix(choice, "\n")
@@ -41,7 +45,7 @@ func main() {
 				dirInput, _ := reader.ReadString('\n')
 				dirInput = strings.TrimSuffix(dirInput, "\n")
 				dirInput = strings.TrimSuffix(dirInput, "\r")
-
+				dirInput = strings.Trim(dirInput, `"`)
 				// Prompt the user for the quality level
 				fmt.Print("Enter the quality level (0-100): ")
 				qualityInput, _ := reader.ReadString('\n')
@@ -64,8 +68,8 @@ func main() {
 				// Read a specific file
 				fmt.Print("Enter the path to the image file: ")
 				filePath, _ := reader.ReadString('\n')
-				filePath = strings.TrimSuffix(filePath, "\n")
-				filePath = strings.TrimSuffix(filePath, "\r")
+				filePath = strings.TrimSpace(filePath)
+				filePath = strings.Trim(filePath, `"`)
 
 				// Prompt the user for the quality level
 				fmt.Print("Enter the quality level (0-100): ")
@@ -97,12 +101,56 @@ func main() {
 					return err
 				}
 				// Call the imageProcessing function with the quality level
-				filename, err := imageProcessing(buffer, quality, outputDir)
+				filename, err := imageProcessing(buffer, quality, outputDir, filePath)
 				if err != nil {
 					return err
 				}
 
 				fmt.Println("Compressed image saved as:", filename)
+			case "3":
+				fmt.Print("Enter the path to the PDF file: ")
+				filePath, _ := reader.ReadString('\n')
+				filePath = strings.TrimSpace(filePath)
+				filePath = strings.Trim(filePath, `"`)
+
+				// Prompt the user for the compression level (0-100)
+				
+
+				// Ensure the output directory exists
+				if err := createFolder(outputDir); err != nil {
+					return err
+				}
+
+				start := time.Now()
+				outputFilePath := filepath.Join(outputDir, "compressed_"+filepath.Base(filePath))
+
+				// Compress the PDF
+				compressPDF(filePath, outputFilePath)
+				
+
+				// Get input and output file stats
+				inputFileInfo, err := os.Stat(filePath)
+				if err != nil {
+					log.Fatalf("Fail: %v\n", err)
+				}
+
+				outputFileInfo, err := os.Stat(outputFilePath)
+				if err != nil {
+					log.Fatalf("Fail: %v\n", err)
+				}
+
+				// Print basic optimization statistics
+				inputSize := inputFileInfo.Size()
+				outputSize := outputFileInfo.Size()
+				ratio := 100.0 - (float64(outputSize) / float64(inputSize) * 100.0)
+				duration := float64(time.Since(start)) / float64(time.Millisecond)
+
+				fmt.Printf("Original file: %s\n", filePath)
+				fmt.Printf("Original size: %d bytes\n", inputSize)
+				fmt.Printf("Optimized file: %s\n", outputFilePath)
+				fmt.Printf("Optimized size: %d bytes\n", outputSize)
+				fmt.Printf("Compression ratio: %.2f%%\n", ratio)
+				fmt.Printf("Processing time: %.2f ms\n", duration)
 			default:
 				fmt.Println("Invalid choice. Please enter 1 or 2.")
 			}
