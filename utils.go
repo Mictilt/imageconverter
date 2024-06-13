@@ -39,6 +39,7 @@ func compressPDF(inputPath, outputPath string) error {
 
 	return nil
 }
+
 // The mime type of the image is changed, it is compressed and then saved in the specified folder.
 func imageProcessing(buffer []byte, quality int, dirname string, filepathOriginal string) (string, error) {
 	println(fmt.Sprintf("Compressing image %s", dirname))
@@ -54,19 +55,17 @@ func imageProcessing(buffer []byte, quality int, dirname string, filepathOrigina
 
 	image.AutoRotate()
 
-	
-
 	options := vips.NewJpegExportParams()
 	options.Quality = quality
-    // Set MozJPEG-specific options
-    options.SubsampleMode = vips.VipsForeignSubsampleOn
-    options.TrellisQuant = true
-    options.OvershootDeringing = true
-    options.QuantTable = 3
-    options.OptimizeScans = true
-    options.Interlace = true
-	
-    imageBytes, _, _ := image.ExportJpeg(options)
+	// Set MozJPEG-specific options
+	options.SubsampleMode = vips.VipsForeignSubsampleOn
+	options.TrellisQuant = true
+	options.OvershootDeringing = true
+	options.QuantTable = 3
+	options.OptimizeScans = true
+	options.Interlace = true
+
+	imageBytes, _, _ := image.ExportJpeg(options)
 	err = os.WriteFile(fmt.Sprintf("./%s/%s", dirname, filename), imageBytes, 0644)
 	if err != nil {
 		return filename, err
@@ -74,7 +73,7 @@ func imageProcessing(buffer []byte, quality int, dirname string, filepathOrigina
 	return filename, nil
 }
 
-func imageProcessingWebp(buffer []byte, quality int, dirname string, filepathOriginal string) (string, error) {
+func imageProcessingWebp(buffer []byte, quality int, dirname string, filepathOriginal string, lossless bool) (string, error) {
 	println(fmt.Sprintf("Compressing image %s", dirname))
 	filename := filepath.Base(filepathOriginal)
 	filename = strings.TrimSuffix(filename, filepath.Ext(filename))
@@ -89,9 +88,12 @@ func imageProcessingWebp(buffer []byte, quality int, dirname string, filepathOri
 	image.AutoRotate()
 
 	options := vips.NewWebpExportParams()
-	options.Quality = quality
-	options.Lossless = true
-	
+
+	if lossless {
+		options.NearLossless = true
+	} else {
+		options.Quality = quality
+	}
 
 	imageBytes, _, _ := image.ExportWebp(options)
 	err = os.WriteFile(fmt.Sprintf("./%s/%s", dirname, filename), imageBytes, 0644)
@@ -138,7 +140,7 @@ func processDirectory(fileType, dirInput string, dirOutput string, quality int) 
 	return nil
 }
 
-func processDirectoryWebp(fileType, dirInput string, dirOutput string, quality int) error {
+func processDirectoryWebp(fileType, dirInput string, dirOutput string, quality int, lossless bool) error {
 	// Ensure the output directory exists
 	if err := createFolder(dirOutput); err != nil {
 		return err
@@ -159,7 +161,7 @@ func processDirectoryWebp(fileType, dirInput string, dirOutput string, quality i
 			}
 
 			// Compress the image
-			_, err = imageProcessingWebp(buffer, quality, dirOutput, path)
+			_, err = imageProcessingWebp(buffer, quality, dirOutput, path, lossless)
 			if err != nil {
 				return err
 			}
@@ -174,5 +176,3 @@ func processDirectoryWebp(fileType, dirInput string, dirOutput string, quality i
 
 	return nil
 }
-
-

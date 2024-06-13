@@ -19,7 +19,7 @@ const outputDir = "./compressed"
 
 func main() {
 	app := &cli.App{
-		Name: "image-compressor",
+		Name:  "image-compressor",
 		Usage: "Compresses an image file",
 		Action: func(c *cli.Context) error {
 			// Prompt the user for the choice
@@ -48,6 +48,8 @@ func main() {
 				dirInput = strings.TrimSuffix(dirInput, "\n")
 				dirInput = strings.TrimSuffix(dirInput, "\r")
 				dirInput = strings.Trim(dirInput, `"`)
+				// for linux remove '
+				dirInput = strings.Trim(dirInput, "'")
 				// Prompt the user for the quality level
 				fmt.Print("Enter the quality level (0-100): ")
 				qualityInput, _ := reader.ReadString('\n')
@@ -72,6 +74,7 @@ func main() {
 				filePath, _ := reader.ReadString('\n')
 				filePath = strings.TrimSpace(filePath)
 				filePath = strings.Trim(filePath, `"`)
+				filePath = strings.Trim(filePath, "'")
 
 				// Prompt the user for the quality level
 				fmt.Print("Enter the quality level (0-100): ")
@@ -114,9 +117,9 @@ func main() {
 				filePath, _ := reader.ReadString('\n')
 				filePath = strings.TrimSpace(filePath)
 				filePath = strings.Trim(filePath, `"`)
+				filePath = strings.Trim(filePath, "'")
 
 				// Prompt the user for the compression level (0-100)
-				
 
 				// Ensure the output directory exists
 				if err := createFolder(outputDir); err != nil {
@@ -128,7 +131,6 @@ func main() {
 
 				// Compress the PDF
 				compressPDF(filePath, outputFilePath)
-				
 
 				// Get input and output file stats
 				inputFileInfo, err := os.Stat(filePath)
@@ -165,42 +167,90 @@ func main() {
 				dirInput = strings.TrimSuffix(dirInput, "\n")
 				dirInput = strings.TrimSuffix(dirInput, "\r")
 				dirInput = strings.Trim(dirInput, `"`)
-				// Prompt the user for the quality level
-				fmt.Print("Enter the quality level (0-100): ")
-				qualityInput, _ := reader.ReadString('\n')
-				qualityInput = strings.TrimSuffix(qualityInput, "\n")
-				qualityInput = strings.TrimSuffix(qualityInput, "\r")
-
-				// Convert the quality input to an integer
-				quality, err := strconv.Atoi(qualityInput)
-				if err != nil || quality < 0 || quality > 100 {
-					fmt.Println("Invalid quality level. Please enter a number between 0 and 100.")
+				// for linux remove '
+				dirInput = strings.Trim(dirInput, "'")
+				var err error
+				fmt.Println("Do you want to use lossless compression? (y/n): ")
+				losslessInput, _ := reader.ReadString('\n')
+				losslessInput = strings.TrimSuffix(losslessInput, "\n")
+				losslessInput = strings.TrimSuffix(losslessInput, "\r")
+				losslessInput = strings.ToLower(losslessInput)
+				if err != nil || losslessInput != "y" && losslessInput != "n" {
+					fmt.Println("Invalid choice. Please enter y or n.")
 					return err
+				}
+
+				var lossless bool
+				var quality int
+				
+
+				if losslessInput == "y" {
+					lossless = true
+					quality = 50
+				} else {
+					lossless = false
+					// Prompt the user for the quality level
+					fmt.Print("Enter the quality level (0-100): ")
+					qualityInput, _ := reader.ReadString('\n')
+					qualityInput = strings.TrimSuffix(qualityInput, "\n")
+					qualityInput = strings.TrimSuffix(qualityInput, "\r")
+
+					// Convert the quality input to an integer
+					quality, err = strconv.Atoi(qualityInput)
+					if err != nil || quality < 0 || quality > 100 {
+						fmt.Println("Invalid quality level. Please enter a number between 0 and 100.")
+						return err
+					}
 				}
 
 				// Process all files in the directory
-				err = processDirectoryWebp(fileType, dirInput, outputDir, quality)
+				err = processDirectoryWebp(fileType, dirInput, outputDir, quality, lossless)
 				if err != nil {
+					fmt.Println("Error processing directory:", err)
 					return err
 				}
+
+				fmt.Printf("Compression completed successfully with Lossless: %v, Quality: %d\n", lossless, quality)
 			case "5":
 				// Read a specific file
 				fmt.Print("Enter the path to the image file: ")
 				filePath, _ := reader.ReadString('\n')
 				filePath = strings.TrimSpace(filePath)
 				filePath = strings.Trim(filePath, `"`)
+				filePath = strings.Trim(filePath, "'")
 
-				// Prompt the user for the quality level
-				fmt.Print("Enter the quality level (0-100): ")
-				qualityInput, _ := reader.ReadString('\n')
-				qualityInput = strings.TrimSuffix(qualityInput, "\n")
-				qualityInput = strings.TrimSuffix(qualityInput, "\r")
-
-				// Convert the quality input to an integer
-				quality, err := strconv.Atoi(qualityInput)
-				if err != nil || quality < 0 || quality > 100 {
-					fmt.Println("Invalid quality level. Please enter a number between 0 and 100.")
+				var err error
+				fmt.Println("Do you want to use lossless compression? (y/n): ")
+				losslessInput, _ := reader.ReadString('\n')
+				losslessInput = strings.TrimSuffix(losslessInput, "\n")
+				losslessInput = strings.TrimSuffix(losslessInput, "\r")
+				losslessInput = strings.ToLower(losslessInput)
+				if err != nil || losslessInput != "y" && losslessInput != "n" {
+					fmt.Println("Invalid choice. Please enter y or n.")
 					return err
+				}
+
+				var lossless bool
+				var quality int
+				
+
+				if losslessInput == "y" {
+					lossless = true
+					quality = 50
+				} else {
+					lossless = false
+					// Prompt the user for the quality level
+					fmt.Print("Enter the quality level (0-100): ")
+					qualityInput, _ := reader.ReadString('\n')
+					qualityInput = strings.TrimSuffix(qualityInput, "\n")
+					qualityInput = strings.TrimSuffix(qualityInput, "\r")
+
+					// Convert the quality input to an integer
+					quality, err = strconv.Atoi(qualityInput)
+					if err != nil || quality < 0 || quality > 100 {
+						fmt.Println("Invalid quality level. Please enter a number between 0 and 100.")
+						return err
+					}
 				}
 
 				// Ensure the output directory exists
@@ -220,7 +270,7 @@ func main() {
 					return err
 				}
 				// Call the imageProcessing function with the quality level
-				filename, err := imageProcessingWebp(buffer, quality, outputDir, filePath)
+				filename, err := imageProcessingWebp(buffer, quality, outputDir, filePath, lossless)
 				if err != nil {
 					return err
 				}
