@@ -29,6 +29,8 @@ func main() {
 			fmt.Println("3. Compress a PDF file")
 			fmt.Println("4. Read a directory to WebP")
 			fmt.Println("5. Read a specific file to WebP")
+			fmt.Println("6. Install libvips")
+			fmt.Println("7. Install Ghostscript")
 			reader := bufio.NewReader(os.Stdin)
 			choice, _ := reader.ReadString('\n')
 			choice = strings.TrimSuffix(choice, "\n")
@@ -130,7 +132,11 @@ func main() {
 				outputFilePath := filepath.Join(outputDir, "compressed_"+filepath.Base(filePath))
 
 				// Compress the PDF
-				compressPDF(filePath, outputFilePath)
+				err := processFile(filePath, outputFilePath)
+				if err != nil {
+					println("Error compressing PDF:", err)
+					os.Exit(1)
+				}
 
 				// Get input and output file stats
 				inputFileInfo, err := os.Stat(filePath)
@@ -175,14 +181,13 @@ func main() {
 				losslessInput = strings.TrimSuffix(losslessInput, "\n")
 				losslessInput = strings.TrimSuffix(losslessInput, "\r")
 				losslessInput = strings.ToLower(losslessInput)
-				if err != nil || losslessInput != "y" && losslessInput != "n" {
+				if losslessInput != "y" && losslessInput != "n" {
 					fmt.Println("Invalid choice. Please enter y or n.")
 					return err
 				}
 
 				var lossless bool
 				var quality int
-				
 
 				if losslessInput == "y" {
 					lossless = true
@@ -225,14 +230,13 @@ func main() {
 				losslessInput = strings.TrimSuffix(losslessInput, "\n")
 				losslessInput = strings.TrimSuffix(losslessInput, "\r")
 				losslessInput = strings.ToLower(losslessInput)
-				if err != nil || losslessInput != "y" && losslessInput != "n" {
+				if losslessInput != "y" && losslessInput != "n" {
 					fmt.Println("Invalid choice. Please enter y or n.")
 					return err
 				}
 
 				var lossless bool
 				var quality int
-				
 
 				if losslessInput == "y" {
 					lossless = true
@@ -276,6 +280,12 @@ func main() {
 				}
 
 				fmt.Println("Compressed image saved as:", filename)
+			case "6":
+				// Install libvips
+				installLibvips()
+			case "7":
+				// Install Ghostscript
+				installGhostscript()
 			default:
 				fmt.Println("Invalid choice. Please enter 1 or 2.")
 			}

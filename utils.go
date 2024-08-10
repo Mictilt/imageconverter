@@ -7,9 +7,7 @@ import (
 	"strings"
 
 	"github.com/davidbyttow/govips/v2/vips"
-	"github.com/pdfcpu/pdfcpu/pkg/api"
 )
-
 // A new folder is created at the root of the project.
 func createFolder(dirname string) error {
 	_, err := os.Stat(dirname)
@@ -19,24 +17,6 @@ func createFolder(dirname string) error {
 			return errDir
 		}
 	}
-	return nil
-}
-func compressPDF(inputPath, outputPath string) error {
-	// Create a temporary file to store the compressed PDF
-	tempOutputPath := outputPath + ".tmp"
-
-	// Compress the PDF using pdfcpu
-	err := api.OptimizeFile(inputPath, tempOutputPath, nil)
-	if err != nil {
-		return err
-	}
-
-	// Rename the temporary file to the desired output path
-	err = os.Rename(tempOutputPath, outputPath)
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
